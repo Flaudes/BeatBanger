@@ -1,0 +1,41 @@
+#ifndef GAME_H
+#define GAME_H
+
+#include <SFML/Graphics.hpp>
+#include <vector>
+#include "note.h"
+
+class Game
+{
+private:
+    sf::RenderWindow window;
+
+    sf::Font font;
+
+    sf::Text scoreText;
+    sf::Text comboText;
+    sf::Text judgementText;
+
+    std::vector<Note> notes;
+
+    int score;
+    int combo;
+
+    const float HIT_LINE_Y = 750.f;
+    const float PERFECT_WINDOW = 40.f;
+    const float GOOD_WINDOW = 90.f;
+
+public:
+    Game();
+
+    void run();
+
+private:
+    void processEvents();
+    void update(float deltaTime);
+    void render();
+
+    void handleInput(sf::Keyboard::Key key);
+};
+
+#endif
