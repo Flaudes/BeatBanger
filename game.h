@@ -22,8 +22,8 @@ private:
     int combo;
 
     const float HIT_LINE_Y = 750.f;
-    const float PERFECT_WINDOW = 40.f;
-    const float GOOD_WINDOW = 90.f;
+    const float PERFECT_WINDOW = 30.f;
+    const float GOOD_WINDOW = 50.f;
 
 public:
     Game();
@@ -36,6 +36,9 @@ private:
     void render();
 
     void handleInput(sf::Keyboard::Key key);
+
+    void resetgame();
+    void loadnotes();
 };
 
 #endif

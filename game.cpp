@@ -9,18 +9,18 @@ const int WINDOW_HEIGHT = 900;
 
 const int LANE_COUNT = 4;
 const float LANE_WIDTH = 150.f;
-const float NOTE_SPEED = 500.f;
+const float NOTE_SPEED = 100.f;
 
 Game::Game()
     : window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT),
-             "4 Key Rhythm Game")
+             "BeatBanger")
 {
     window.setFramerateLimit(144);
 
     score = 0;
     combo = 0;
 
-    if (!font.loadFromFile("assets/arial.ttf"))
+    if (!font.loadFromFile("assets/arial.ttf")) 
     {
         std::cout << "Failed to load font!\n";
     }
@@ -77,6 +77,15 @@ void Game::processEvents()
 
     while (window.pollEvent(event))
     {
+        if (event.type == sf::Event::KeyPressed)
+{
+    std::cout << "Pressed\n";
+}
+
+if (event.type == sf::Event::KeyReleased)
+{
+    std::cout << "Released\n";
+}
         if (event.type == sf::Event::Closed)
         {
             window.close();
@@ -84,17 +93,13 @@ void Game::processEvents()
 
         if (event.type == sf::Event::KeyPressed)
         {
+            if (event.key.code == sf::Keyboard::R)
+                {
+                   resetgame();
+                 }
+
             handleInput(event.key.code);
         }
-        if (event.type == sf::Event::KeyPressed)
-        {
-                if (event.key.code == sf::Keyboard::R)
-                    {
-                        resetGame();
-                    }
-
-         handleInput(event.key.code);
-        }   
     }
 }
 
@@ -117,54 +122,65 @@ void Game::handleInput(sf::Keyboard::Key key)
     if (pressedLane == -1)
         return;
 
-    bool foundHit = false;
+    int bestIndex = -1;
+    float bestDistance = 999999.f;
 
     for (size_t i = 0; i < notes.size(); i++)
     {
-        Note& note = notes[i];
-
-        if (note.hit)
+        if (notes[i].hit)
             continue;
 
-        if (note.lane != pressedLane)
+        if (notes[i].lane != pressedLane)
             continue;
 
         float distance =
-            std::abs(note.y - HIT_LINE_Y);
+            std::abs(notes[i].y - HIT_LINE_Y);
 
-        if (distance <= PERFECT_WINDOW)
+        if (distance < bestDistance)
         {
-            note.hit = true;
-
-            score += 300;
-            combo++;
-
-            judgementText.setString("PERFECT");
-
-            foundHit = true;
-            break;
-        }
-
-        if (distance <= GOOD_WINDOW)
-        {
-            note.hit = true;
-
-            score += 100;
-            combo++;
-
-            judgementText.setString("GOOD");
-
-            foundHit = true;
-            break;
+            bestDistance = distance;
+            bestIndex = i;
         }
     }
 
-    if (!foundHit)
+    if (bestIndex == -1)
+    {
+        combo = 0;
+        judgementText.setString("MISS");
+        return;
+    }
+
+    Note& note = notes[bestIndex];
+
+    if (bestDistance <= PERFECT_WINDOW)
+    {
+        note.hit = true;
+
+        score += 300;
+        combo++;
+
+        judgementText.setString("PERFECT");
+    }
+    else if (bestDistance <= GOOD_WINDOW)
+    {
+        note.hit = true;
+
+        score += 100;
+        combo++;
+
+        judgementText.setString("GOOD");
+    }
+    else
     {
         combo = 0;
         judgementText.setString("MISS");
     }
+    std::cout
+    << "Lane: " << pressedLane
+    << " Distance: " << bestDistance
+    << std::endl;
 }
+
 
 void Game::update(float deltaTime)
 {
@@ -256,7 +272,7 @@ void Game::render()
     
 }
 
-void Game::loadNotes()
+void Game::loadnotes()
 {
     notes.clear();
 
@@ -274,14 +290,14 @@ void Game::loadNotes()
     }
 }
 
-void Game::resetGame()
+void Game::resetgame()
 {
     score = 0;
     combo = 0;
 
     scoreText.setString("Score: 0");
     comboText.setString("Combo: 0");
-    judgmentText.setString("");
+    judgementText.setString("");
 
-    loadNotes();
+    loadnotes();
 }
