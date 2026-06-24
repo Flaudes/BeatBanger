@@ -1,15 +1,16 @@
 #include "game.h"
-
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
+#include <fstream>
+#include <sstream>
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 900;
 
 const int LANE_COUNT = 4;
 const float LANE_WIDTH = 150.f;
-const float NOTE_SPEED = 100.f;
+const float NOTE_SPEED = 500.f;
 
 Game::Game()
     : window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT),
@@ -43,18 +44,13 @@ Game::Game()
     float spawnGap = 0.5f;
     float startOffset = -100.f;
 
-    for (int i = 0; i < 60; i++)
+    loadOsuNotes("assets/beatmap.osu");
+    if (!song.openFromFile("assets/audio.ogg")) 
     {
-        int lane = rand() % 4;
-
-        notes.push_back(
-            Note(
-                lane,
-                startOffset - (i * spawnGap * NOTE_SPEED)
-            )
-        );
+        std::cout << "Gagal membuka file audio!\n";
     }
-    loadnotes();
+    
+    song.play();
 }
 
 void Game::run()
@@ -272,22 +268,65 @@ void Game::render()
     
 }
 
-void Game::loadnotes()
+void Game::loadOsuNotes(const std::string& filepath)
 {
     notes.clear();
-
-    float spawnGap = 0.5f;
-    float startOffset = -100.f;
-
-    for (int i = 0; i < 60; i++)
+    std::ifstream file(filepath);
+    if (!file.is_open())
     {
-        notes.push_back(
-            Note(
-                rand() % 4,
-                startOffset - (i * spawnGap * NOTE_SPEED)
-            )
-        );
+        std::cout << "Gagal membuka file .osu: " << filepath << std::endl;
+        return;
     }
+
+    std::string line;
+    bool inHitObjectsSection = false;
+
+    while (std::getline(file, line))
+    {
+        // Cari bagian [HitObjects] di dalam file .osu
+       if (line.find("[HitObjects]") != std::string::npos)
+        {
+            inHitObjectsSection = true;
+            continue;
+        }
+
+        // Jika ketemu bagian section lain setelah HitObjects, berhenti
+        if (inHitObjectsSection && line.find("[") == 0)
+        {
+            break;
+        }
+
+        // Proses data hit object
+        if (inHitObjectsSection && !line.empty())
+        {
+            std::stringstream ss(line);
+            std::string xStr, yStr, timeStr;
+
+            // Format Osu: x,y,time,type,hitSound,objectParams...
+            std::getline(ss, xStr, ',');
+            std::getline(ss, yStr, ',');
+            std::getline(ss, timeStr, ',');
+
+            if (!xStr.empty() && !timeStr.empty())
+            {
+                int x = std::stoi(xStr);
+                float timeInMs = std::stof(timeStr);
+                float timeInSeconds = timeInMs / 1000.f;
+
+                // Konversi koordinat X Osu (0-512) ke Lane (0-3) untuk game 4-Key
+                int lane = std::floor(x * LANE_COUNT / 512);
+                if (lane < 0) lane = 0;
+                if (lane >= LANE_COUNT) lane = LANE_COUNT - 1;
+
+                // Hitung posisi awal Y note agar tepat sampai di HIT_LINE_Y pada waktunya
+                float spawnY = HIT_LINE_Y - (timeInSeconds * NOTE_SPEED);
+
+                notes.push_back(Note(lane, spawnY));
+            }
+        }
+    }
+    file.close();
+    std::cout << "Berhasil memuat " << notes.size() << " notes dari file .osu!\n";
 }
 
 void Game::resetgame()
@@ -299,5 +338,7 @@ void Game::resetgame()
     comboText.setString("Combo: 0");
     judgementText.setString("");
 
-    loadnotes();
+    loadOsuNotes("assets/beatmap.osu");
+    song.stop();
+    song.play();
 }

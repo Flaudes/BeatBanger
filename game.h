@@ -2,20 +2,23 @@
 #define GAME_H
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <vector>
+#include <string>
+
 #include "note.h"
 
 class Game
 {
 private:
     sf::RenderWindow window;
-
     sf::Font font;
 
     sf::Text scoreText;
     sf::Text comboText;
     sf::Text judgementText;
-
+    sf::Music song;
+    
     std::vector<Note> notes;
 
     int score;
@@ -27,7 +30,6 @@ private:
 
 public:
     Game();
-
     void run();
 
 private:
@@ -38,7 +40,9 @@ private:
     void handleInput(sf::Keyboard::Key key);
 
     void resetgame();
-    void loadnotes();
+    
+    
+    void loadOsuNotes(const std::string& filepath); 
 };
 
 #endif
